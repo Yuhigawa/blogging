@@ -3,6 +3,7 @@
 [![Package Version](https://img.shields.io/hexpm/v/blogging)](https://hex.pm/packages/blogging)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/blogging/)
 
+[The project design](https://excalidraw.com/#json=HihnVIRddo0oNz-TqOva4,r0f3PERyFrmro81ONhpSmA)
 ```sh
 gleam add blogging@1
 ```
