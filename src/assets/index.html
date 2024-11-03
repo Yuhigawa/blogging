@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Blog Layout</title>
+</head>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+.sidebar {
+    width: 25%;
+    background-color: #f0f0f0;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.profile {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.circle {
+    width: 100px;
+    height: 100px;
+    background-color: #cccccc;
+    border-radius: 50%;
+    margin: 0 auto;
+}
+
+.description {
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.menu ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.menu li {
+    margin: 10px 0;
+}
+
+.menu ul ul {
+    padding-left: 20px;
+}
+
+.content {
+    width: 75%;
+    padding: 40px;
+    box-sizing: border-box;
+}
+
+h1 {
+    font-size: 2em;
+    margin-bottom: 20px;
+}
+
+p {
+    line-height: 1.6;
+}
+</style>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="profile">
+                <div class="circle"></div>
+                <p class="description">description</p>
+            </div>
+            <nav class="menu">
+                <ul>
+                    <li>Menu 1
+                        <ul>
+                            <li class="submenu-item" id="submenu1" style="cursor: pointer;">submenu 1</li>
+                            <li class="submenu-item" id="submenu2" style="cursor: pointer;">submenu 2</li>
+                        </ul>
+                    </li>
+                    <li>Menu 2
+                        <ul>
+                            <li class="submenu-item" id="submenu1" style="cursor: pointer;">submenu 1</li>
+                            <li class="submenu-item" id="submenu2" style="cursor: pointer;">submenu 2</li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+        
+        <main class="content">
+            <div id="dynamic-content"></div>
+        </main>
+    </div>
+</body>
+<script>
+    document.querySelectorAll('.submenu-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const templateId = `template-${this.id}`;
+            const template = document.getElementById(templateId);
+            if (template) {
+                const clone = document.importNode(template.content, true);
+                const dynamicContent = document.getElementById('dynamic-content');
+                dynamicContent.innerHTML = '';
+                dynamicContent.appendChild(clone);
+            }
+        });
+    });
+</script>
+</html>
