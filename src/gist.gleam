@@ -8,6 +8,7 @@ import gleam/json
 import gleam/list
 import gleam/result
 import gleam/string
+import slug
 
 const blog_prefix = "blog:"
 
@@ -169,8 +170,8 @@ fn fetch_bodies(
 
 fn sort_by_slug(posts: List(Post)) -> List(Post) {
   list.sort(posts, by: fn(a, b) {
-    let ka = slug(a.group) <> "/" <> slug(a.leaf)
-    let kb = slug(b.group) <> "/" <> slug(b.leaf)
+    let ka = slug.slugify(a.group) <> "/" <> slug.slugify(a.leaf)
+    let kb = slug.slugify(b.group) <> "/" <> slug.slugify(b.leaf)
     string.compare(ka, kb)
   })
 }
@@ -179,7 +180,7 @@ fn dedupe(posts: List(Post)) -> List(Post) {
   let #(kept, _seen) =
     list.fold(posts, #([], []), fn(acc, p) {
       let #(kept, seen) = acc
-      let key = slug(p.group) <> "/" <> slug(p.leaf)
+      let key = slug.slugify(p.group) <> "/" <> slug.slugify(p.leaf)
       case list.contains(seen, key) {
         True -> {
           log_warn("collision dropped: " <> key)
@@ -191,58 +192,7 @@ fn dedupe(posts: List(Post)) -> List(Post) {
   list.reverse(kept)
 }
 
-// --- slug + logging --------------------------------------------------------
-
-fn slug(s: String) -> String {
-  s
-  |> string.lowercase
-  |> string.replace(" ", "-")
-  |> string.to_graphemes
-  |> list.filter(fn(c) { is_alnum(c) || c == "-" || c == "_" })
-  |> string.concat
-}
-
-fn is_alnum(c: String) -> Bool {
-  case c {
-    "a"
-    | "b"
-    | "c"
-    | "d"
-    | "e"
-    | "f"
-    | "g"
-    | "h"
-    | "i"
-    | "j"
-    | "k"
-    | "l"
-    | "m"
-    | "n"
-    | "o"
-    | "p"
-    | "q"
-    | "r"
-    | "s"
-    | "t"
-    | "u"
-    | "v"
-    | "w"
-    | "x"
-    | "y"
-    | "z"
-    | "0"
-    | "1"
-    | "2"
-    | "3"
-    | "4"
-    | "5"
-    | "6"
-    | "7"
-    | "8"
-    | "9" -> True
-    _ -> False
-  }
-}
+// --- logging ---------------------------------------------------------------
 
 fn log_warn(msg: String) -> Nil {
   io.println_error("[gist] " <> msg)
