@@ -1,4 +1,3 @@
-import gleam/bit_array
 import gleam/option.{None, Some}
 import gleeunit/should
 import static_serve

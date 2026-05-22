@@ -20,6 +20,9 @@ pub fn serve(path: String) -> Response(BytesBuilder) {
 }
 
 pub fn resolve(path: String) -> Option(String) {
+  // elli does not URL-decode req.path; encoded variants like %2e%2e arrive literal
+  // and are rejected by the substring guard. Any decoding middleware added upstream
+  // must re-validate before reaching this point.
   case string.starts_with(path, "/") || string.contains(path, "..") {
     True -> None
     False -> Some("src/assets/static/" <> path)
@@ -40,19 +43,9 @@ pub fn mime_for(path: String) -> String {
 }
 
 fn extension(path: String) -> String {
-  case string.split(path, ".") {
-    [] -> ""
-    parts -> {
-      let assert Ok(last) = list_last(parts)
-      string.lowercase(last)
-    }
-  }
-}
-
-fn list_last(xs: List(String)) -> Result(String, Nil) {
-  case list.reverse(xs) {
-    [h, ..] -> Ok(h)
-    [] -> Error(Nil)
+  case string.split(path, ".") |> list.last {
+    Ok(ext) -> string.lowercase(ext)
+    Error(_) -> ""
   }
 }
 
