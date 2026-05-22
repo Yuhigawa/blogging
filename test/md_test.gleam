@@ -97,3 +97,18 @@ pub fn list_item_has_inline_test() {
   md.to_html("- **a** b")
   |> should.equal("<ul><li><strong>a</strong> b</li></ul>")
 }
+
+pub fn fence_test() {
+  md.to_html("```\nfn x() {}\n```")
+  |> should.equal("<pre><code>fn x() {}</code></pre>")
+}
+
+pub fn fence_escapes_html_test() {
+  md.to_html("```\n<script>\n```")
+  |> should.equal("<pre><code>&lt;script&gt;</code></pre>")
+}
+
+pub fn fence_preserves_internal_blank_line_test() {
+  md.to_html("```\na\n\nb\n```")
+  |> should.equal("<pre><code>a\n\nb</code></pre>")
+}

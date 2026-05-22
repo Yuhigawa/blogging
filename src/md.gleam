@@ -5,9 +5,14 @@ import gleam/string
 pub fn to_html(source: String) -> String {
   source
   |> string.split("\n")
-  |> blocks([], [])
+  |> blocks([], [], Normal)
   |> list.reverse
   |> string.join("\n")
+}
+
+type Mode {
+  Normal
+  InFence(List(String))
 }
 
 // Group lines into blocks separated by blank lines.
@@ -15,15 +20,28 @@ fn blocks(
   lines: List(String),
   current: List(String),
   out: List(String),
+  mode: Mode,
 ) -> List(String) {
-  case lines {
-    [] -> flush(current, out)
-    [line, ..rest] ->
+  case mode, lines {
+    Normal, [] -> flush(current, out)
+    Normal, [line, ..rest] ->
       case string.trim(line) {
-        "" -> blocks(rest, [], flush(current, out))
-        _ -> blocks(rest, [line, ..current], out)
+        "```" -> blocks(rest, [], flush(current, out), InFence([]))
+        "" -> blocks(rest, [], flush(current, out), Normal)
+        _ -> blocks(rest, [line, ..current], out, Normal)
+      }
+    InFence(acc), [] -> [render_fence(list.reverse(acc)), ..out]
+    InFence(acc), [line, ..rest] ->
+      case string.trim(line) == "```" {
+        True ->
+          blocks(rest, [], [render_fence(list.reverse(acc)), ..out], Normal)
+        False -> blocks(rest, [], out, InFence([line, ..acc]))
       }
   }
+}
+
+fn render_fence(lines: List(String)) -> String {
+  "<pre><code>" <> escape(string.join(lines, "\n")) <> "</code></pre>"
 }
 
 fn flush(current: List(String), out: List(String)) -> List(String) {
