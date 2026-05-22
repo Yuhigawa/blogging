@@ -93,8 +93,9 @@ The design from the original sketch wants a menu driven by content nodes (eventu
 
 ### Naming rules
 
-- `<group>` and `<leaf>` slugs are the literal directory/filename minus `.md`, lowercased on read for the `id=` attribute, displayed verbatim for the label. ASCII recommended; non-ASCII accepted but the `id=` is lowercased with whitespace replaced by `-` (deterministic, documented).
-- Filenames with characters that aren't `[a-z0-9_-]` after the transform are skipped with a warning.
+- `<group>` and `<leaf>` slugs are the literal directory/filename minus `.md`. Displayed verbatim for the label. The `id=` attribute is derived by a deterministic transform applied in this order: (1) lowercase, (2) replace whitespace runs with single `-`, (3) drop any remaining character not in `[a-z0-9_-]`.
+- If the transform yields an empty string or collides with a sibling's id, the file is skipped with a warning.
+- The JS click handler reads `this.id` (the lowercased slug) and looks up `template-<group_id>-<leaf_id>`. `menu_render` tests assert that both the `<li id=…>` and the matching `<template id=template-…>` use the same transformed id.
 
 ### Scanner ordering and filtering
 
@@ -153,7 +154,10 @@ src/assets/
   - missing `{{menu}}` placeholder raises at startup
   - `<script>` in post body is rendered escaped, not executed
   - duplicate `<group>-<leaf>` collision (cross-group) yields distinct template IDs
-- **Snapshot update workflow:** failing snapshot prints diff + the command to regenerate (`GLEAM_UPDATE_SNAPSHOTS=1 gleam test`). Updates require a manual commit, never auto-applied in CI.
+- **Snapshot update workflow:** snapshots live under `test/snapshots/<test_name>.html`; comparison is exact string match (no whitespace normalization — drift is signal, not noise). Failing snapshot prints diff + the command to regenerate (`GLEAM_UPDATE_SNAPSHOTS=1 gleam test`). Updates require a manual commit, never auto-applied in CI.
+- **Known-failing test marker:** a test that is intentionally red until a later step lives in a `skip/<step>.gleam` file with a `// unskip-at: step 6a` comment. Skips count as zero in CI; removing the skip is part of the later step's "Done when". No `xfail` / red bars allowed in the suite.
+- **CI gate:** `.github/workflows/test.yml` already exists; verify it runs `gleam test` on push to any branch. If not, fix as part of Step 1.
+- **FFI negative decode:** the decoder for `{error, {other, Bin}}` has a test for malformed tuple shapes (wrong arity, wrong tag) — must return `Other("unrecognized: …")` rather than crash.
 
 ## Out of scope (re-stated for clarity)
 
