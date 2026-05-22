@@ -62,3 +62,18 @@ pub fn nested_emphasis_renders_literally_test() {
   md.to_html("**bold *italic***")
   |> should.equal("<p><strong>bold *italic*</strong></p>")
 }
+
+pub fn link_test() {
+  md.to_html("[Hex](https://hex.pm)")
+  |> should.equal("<p><a href=\"https://hex.pm\">Hex</a></p>")
+}
+
+pub fn link_text_is_escaped_test() {
+  md.to_html("[<x>](https://h)")
+  |> should.equal("<p><a href=\"https://h\">&lt;x&gt;</a></p>")
+}
+
+pub fn link_href_quote_escaped_test() {
+  md.to_html("[t](\"weird)")
+  |> should.equal("<p><a href=\"&quot;weird\">t</a></p>")
+}
