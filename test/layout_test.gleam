@@ -12,6 +12,16 @@ pub fn missing_menu_placeholder_raises_test() {
   layout.validate(tpl) |> should.equal(Error(layout.MissingMenu))
 }
 
+pub fn missing_templates_placeholder_raises_test() {
+  let tpl = "<nav><!-- {{menu}} --></nav>"
+  layout.validate(tpl) |> should.equal(Error(layout.MissingTemplates))
+}
+
+pub fn duplicate_menu_placeholder_raises_test() {
+  let tpl = "<!-- {{menu}} --><!-- {{menu}} --><!-- {{templates}} -->"
+  layout.validate(tpl) |> should.equal(Error(layout.DuplicateMenu))
+}
+
 pub fn duplicate_templates_placeholder_raises_test() {
   let tpl = "<!-- {{menu}} --><!-- {{templates}} --><!-- {{templates}} -->"
   layout.validate(tpl) |> should.equal(Error(layout.DuplicateTemplates))

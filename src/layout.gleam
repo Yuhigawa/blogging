@@ -29,6 +29,8 @@ pub fn render(
   menu_html: String,
   templates_html: String,
 ) -> String {
+  // Slugify in menu_render strips `<`, `>`, `{`, `}`, so the templates token
+  // cannot survive into menu_html — substitution order is safe.
   template
   |> string.replace(menu_token, menu_html)
   |> string.replace(templates_token, templates_html)
