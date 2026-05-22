@@ -3,10 +3,12 @@ import gleam/list
 import gleam/result
 import gleam/string
 
-pub type Scan =
-  List(#(String, String, String))
+pub type Post {
+  Post(group: String, leaf: String, body: String)
+}
 
-//                   group   leaf    body
+pub type Scan =
+  List(Post)
 
 pub fn scan(root: String) -> Result(Scan, file_io.FileError) {
   use groups <- result.try(file_io.list_dir(root))
@@ -33,17 +35,13 @@ fn scan_group(root: String, group: String) -> Scan {
   }
 }
 
-fn load_post(
-  dir: String,
-  group: String,
-  file: String,
-) -> Result(#(String, String, String), Nil) {
+fn load_post(dir: String, group: String, file: String) -> Result(Post, Nil) {
   let path = dir <> "/" <> file
   case file_io.read_text(path) {
     Error(_) -> Error(Nil)
     Ok(body) -> {
-      let leaf = file |> string.replace(each: ".md", with: "")
-      Ok(#(group, leaf, body))
+      let leaf = string.drop_right(file, 3)
+      Ok(Post(group: group, leaf: leaf, body: body))
     }
   }
 }
