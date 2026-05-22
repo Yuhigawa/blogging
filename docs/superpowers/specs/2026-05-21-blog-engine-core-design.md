@@ -212,4 +212,7 @@ After each step's edits land:
 
 ## Hardening Log
 
-(populated by the reviewer loop as steps complete)
+- step 1 — FFI helpers that wrap multi-return BIFs must pattern-match every documented shape (binary | {error,_,_} | {incomplete,_,_}), not just the happy path, or the bad shape leaks across the language boundary as a fake string — prevented going forward by: Erlang FFI convention of an `{ok, X} | error` helper consumed by an explicit case in every caller
+- step 1 — Tests must not depend on directories owned by other tasks (e.g. `src/assets/`) — prevented going forward by: convention that file-IO tests read from `test/fixtures/<module>/` exclusively
+- step 1 — Test fixture comments must describe the fixture's actual shape, and each documented decoder branch needs a test that exercises it (not just claims to) — prevented going forward by: one test per decode branch (known-atom, unknown-atom, well-formed-tuple, malformed-tuple), comments matching the literal fixture
+- step 1 — Decoders should be strict mirrors of the FFI contract: match exactly the shapes the FFI emits and route everything else to a single `unrecognized()` bucket, rather than half-defensive case-within-case nesting — prevented going forward by: convention that FFI decoders use guard-based pattern matching on tuple shape and any new FFI variant requires an explicit decoder update
