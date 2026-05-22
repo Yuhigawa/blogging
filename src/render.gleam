@@ -1,13 +1,11 @@
+import file_io
 import gleam/list
 import gleam/string
-
-@external(erlang, "markdown_server_ffi", "read_text_file")
-fn read_text_file(path: String) -> Result(String, String)
 
 pub fn convert_markdown_to_html(file_path: String) -> String {
   let full_file_path = "src/assets/" <> file_path
 
-  case read_text_file(full_file_path) {
+  case file_io.read_text(full_file_path) {
     Ok(content) -> parse_markdown(content, file_path)
     Error(_) -> "<h1>Error reading file</h1>"
   }
@@ -16,7 +14,7 @@ pub fn convert_markdown_to_html(file_path: String) -> String {
 pub fn file_to_string(file_path: String) -> String {
   let full_file_path = "src/assets/" <> file_path
 
-  case read_text_file(full_file_path) {
+  case file_io.read_text(full_file_path) {
     Ok(content) -> content
     Error(_) -> "<h1>Error reading file to string<h1>"
   }
