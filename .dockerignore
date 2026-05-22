@@ -1,0 +1,11 @@
+.git
+.github
+build
+ebin
+docs
+test
+*.beam
+*.ez
+erl_crash.dump
+README.md
+start_server.sh
