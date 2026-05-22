@@ -207,6 +207,14 @@ const esc_star = "\u{E000}"
 
 const esc_tick = "\u{E001}"
 
+const esc_lbracket = "\u{E002}"
+
+const esc_rbracket = "\u{E003}"
+
+const esc_lparen = "\u{E004}"
+
+const esc_rparen = "\u{E005}"
+
 fn protect_escapes(s: String) -> String {
   s
   |> string.replace("\\*", esc_star)
@@ -217,6 +225,10 @@ fn restore_escapes(s: String) -> String {
   s
   |> string.replace(esc_star, "*")
   |> string.replace(esc_tick, "`")
+  |> string.replace(esc_lbracket, "[")
+  |> string.replace(esc_rbracket, "]")
+  |> string.replace(esc_lparen, "(")
+  |> string.replace(esc_rparen, ")")
 }
 
 fn tokenize_code_spans(s: String) -> String {
@@ -225,12 +237,16 @@ fn tokenize_code_spans(s: String) -> String {
     Ok(#(before, rest)) ->
       case string.split_once(rest, "`") {
         Error(_) -> before <> "`" <> tokenize_code_spans(rest)
-        Ok(#(code, after)) ->
-          before
-          <> "<code>"
-          <> string.replace(code, "*", esc_star)
-          <> "</code>"
-          <> tokenize_code_spans(after)
+        Ok(#(code, after)) -> {
+          let safe =
+            code
+            |> string.replace("*", esc_star)
+            |> string.replace("[", esc_lbracket)
+            |> string.replace("]", esc_rbracket)
+            |> string.replace("(", esc_lparen)
+            |> string.replace(")", esc_rparen)
+          before <> "<code>" <> safe <> "</code>" <> tokenize_code_spans(after)
+        }
       }
   }
 }
@@ -261,6 +277,8 @@ fn escape_attr(s: String) -> String {
   s
   |> string.replace("\"", "&quot;")
   |> string.replace("'", "&#39;")
+  |> string.replace("*", esc_star)
+  |> string.replace("`", esc_tick)
 }
 
 fn resolve_emphasis(s: String) -> String {

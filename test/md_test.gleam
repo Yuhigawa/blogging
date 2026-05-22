@@ -121,3 +121,76 @@ pub fn blockquote_test() {
 pub fn hr_test() {
   md.to_html("---") |> should.equal("<hr>")
 }
+
+pub fn code_span_suppresses_link_test() {
+  md.to_html("`[x](y)`")
+  |> should.equal("<p><code>[x](y)</code></p>")
+}
+
+pub fn link_href_star_protected_test() {
+  md.to_html("[plain](url*with*star)")
+  |> should.equal("<p><a href=\"url*with*star\">plain</a></p>")
+}
+
+pub fn link_text_can_have_emphasis_test() {
+  md.to_html("[*emp*](url)")
+  |> should.equal("<p><a href=\"url\"><em>emp</em></a></p>")
+}
+
+// T6a edge cases
+pub fn heading_seven_hashes_is_paragraph_test() {
+  md.to_html("####### Seven")
+  |> should.equal("<p>####### Seven</p>")
+}
+
+pub fn heading_without_space_is_paragraph_test() {
+  md.to_html("#NoSpace")
+  |> should.equal("<p>#NoSpace</p>")
+}
+
+pub fn heading_with_only_space_is_empty_h1_test() {
+  md.to_html("# ")
+  |> should.equal("<h1></h1>")
+}
+
+// T6b inline edge cases
+pub fn unmatched_asterisk_renders_literally_test() {
+  md.to_html("*foo")
+  |> should.equal("<p>*foo</p>")
+}
+
+// Pin: split_last greedy emphasis — first '*' opens, LAST '*' closes,
+// so adjacent emphasis runs collapse into a single span.
+pub fn two_emphasis_runs_on_one_line_test() {
+  md.to_html("*a* *b*")
+  |> should.equal("<p><em>a* *b</em></p>")
+}
+
+pub fn code_span_inside_bold_test() {
+  md.to_html("**a `b` c**")
+  |> should.equal("<p><strong>a <code>b</code> c</strong></p>")
+}
+
+pub fn heading_with_emphasis_test() {
+  md.to_html("# **Bold**")
+  |> should.equal("<h1><strong>Bold</strong></h1>")
+}
+
+// T6e fence edge cases
+// Pin: EOF inside an open fence still flushes accumulated lines as a fence.
+pub fn fence_with_eof_inside_test() {
+  md.to_html("```\nfoo\nbar")
+  |> should.equal("<pre><code>foo\nbar</code></pre>")
+}
+
+pub fn empty_fence_test() {
+  md.to_html("```\n```")
+  |> should.equal("<pre><code></code></pre>")
+}
+
+// Pin: language hints are not supported. ```python is not recognized as a
+// fence opener; the line is treated inline, producing degenerate output.
+pub fn fence_with_language_hint_is_paragraph_test() {
+  md.to_html("```python\nfoo\n```")
+  |> should.equal("<p><code></code>`python foo</p>\n<pre><code></code></pre>")
+}
