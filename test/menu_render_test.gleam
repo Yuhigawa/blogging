@@ -21,7 +21,7 @@ pub fn templates_use_group_leaf_id_test() {
 }
 
 pub fn unmentioned_group_absent_test() {
-  // an empty group never reaches menu_render (filtered by scanner) — but a single entry should still produce one group label
+  // an empty group never reaches menu_render (gist only emits matching files) — but a single entry should still produce one group label
   let scan = [gist.Post(group: "estudos", leaf: "html", body: "# h\n")]
   let #(menu, _) = menu_render.build(scan)
   string.contains(menu, "ensaios") |> should.be_false
