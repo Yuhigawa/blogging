@@ -77,3 +77,23 @@ pub fn link_href_quote_escaped_test() {
   md.to_html("[t](\"weird)")
   |> should.equal("<p><a href=\"&quot;weird\">t</a></p>")
 }
+
+pub fn ul_test() {
+  md.to_html("- one\n- two")
+  |> should.equal("<ul><li>one</li>\n<li>two</li></ul>")
+}
+
+pub fn ul_star_test() {
+  md.to_html("* one\n* two")
+  |> should.equal("<ul><li>one</li>\n<li>two</li></ul>")
+}
+
+pub fn ol_test() {
+  md.to_html("1. one\n2. two")
+  |> should.equal("<ol><li>one</li>\n<li>two</li></ol>")
+}
+
+pub fn list_item_has_inline_test() {
+  md.to_html("- **a** b")
+  |> should.equal("<ul><li><strong>a</strong> b</li></ul>")
+}

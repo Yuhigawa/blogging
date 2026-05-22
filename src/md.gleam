@@ -34,10 +34,76 @@ fn flush(current: List(String), out: List(String)) -> List(String) {
 }
 
 fn render_block(lines: List(String)) -> String {
-  case lines {
-    [single] -> render_single_or_heading(single)
-    _ -> "<p>" <> apply_inline(escape(string.join(lines, " "))) <> "</p>"
+  case classify_block(lines) {
+    Unordered(items) -> render_list("ul", items)
+    Ordered(items) -> render_list("ol", items)
+    Paragraph ->
+      case lines {
+        [single] -> render_single_or_heading(single)
+        _ -> "<p>" <> apply_inline(escape(string.join(lines, " "))) <> "</p>"
+      }
   }
+}
+
+type BlockKind {
+  Unordered(List(String))
+  Ordered(List(String))
+  Paragraph
+}
+
+fn classify_block(lines: List(String)) -> BlockKind {
+  case list.all(lines, is_ul_line) {
+    True -> Unordered(list.map(lines, strip_ul_marker))
+    False ->
+      case list.all(lines, is_ol_line) {
+        True -> Ordered(list.map(lines, strip_ol_marker))
+        False -> Paragraph
+      }
+  }
+}
+
+fn is_ul_line(line: String) -> Bool {
+  string.starts_with(line, "- ") || string.starts_with(line, "* ")
+}
+
+fn strip_ul_marker(line: String) -> String {
+  string.drop_left(line, 2)
+}
+
+fn is_ol_line(line: String) -> Bool {
+  case string.split_once(line, ". ") {
+    Error(_) -> False
+    Ok(#(head, _)) -> is_all_digits(head)
+  }
+}
+
+fn strip_ol_marker(line: String) -> String {
+  case string.split_once(line, ". ") {
+    Ok(#(_, rest)) -> rest
+    Error(_) -> line
+  }
+}
+
+fn is_all_digits(s: String) -> Bool {
+  case s {
+    "" -> False
+    _ -> s |> string.to_graphemes |> list.all(is_digit)
+  }
+}
+
+fn is_digit(c: String) -> Bool {
+  case c {
+    "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" -> True
+    _ -> False
+  }
+}
+
+fn render_list(tag: String, items: List(String)) -> String {
+  let item_html =
+    items
+    |> list.map(fn(body) { "<li>" <> apply_inline(escape(body)) <> "</li>" })
+    |> string.join("\n")
+  "<" <> tag <> ">" <> item_html <> "</" <> tag <> ">"
 }
 
 fn render_single_or_heading(line: String) -> String {
