@@ -30,3 +30,35 @@ pub fn script_tag_escaped_test() {
   md.to_html("<script>alert(1)</script>")
   |> should.equal("<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>")
 }
+
+pub fn bold_test() {
+  md.to_html("a **bold** b") |> should.equal("<p>a <strong>bold</strong> b</p>")
+}
+
+pub fn italic_test() {
+  md.to_html("a *italic* b") |> should.equal("<p>a <em>italic</em> b</p>")
+}
+
+pub fn code_span_test() {
+  md.to_html("`code`") |> should.equal("<p><code>code</code></p>")
+}
+
+pub fn code_span_escapes_html_test() {
+  md.to_html("`<x>`") |> should.equal("<p><code>&lt;x&gt;</code></p>")
+}
+
+pub fn code_span_suppresses_emphasis_test() {
+  md.to_html("`**not bold**`")
+  |> should.equal("<p><code>**not bold**</code></p>")
+}
+
+pub fn backslash_escape_star_test() {
+  md.to_html("a \\*literal\\* b")
+  |> should.equal("<p>a *literal* b</p>")
+}
+
+// Intentional non-support pin: nested emphasis renders literally.
+pub fn nested_emphasis_renders_literally_test() {
+  md.to_html("**bold *italic***")
+  |> should.equal("<p><strong>bold *italic*</strong></p>")
+}
