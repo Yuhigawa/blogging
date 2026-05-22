@@ -1,20 +1,24 @@
 import file_io
+import gist
 import gleeunit/should
 import layout
 import menu_render
-import scanner
 
 pub fn end_to_end_snapshot_test() {
   let template =
-    "<html><nav><!-- {{menu}} --></nav><body><!-- {{templates}} --></body></html>"
-  let assert Ok(scan) = scanner.scan("test/fixtures/posts")
-  let #(menu, tpls) = menu_render.build(scan)
-  let rendered = layout.render(template, menu, tpls)
+    "<html><nav><!-- {{menu}} --></nav><banner><!-- {{banner}} --></banner><body><!-- {{templates}} --></body></html>"
+  let posts = [
+    gist.Post(group: "estudos", leaf: "css", body: "# css\n\nbody"),
+    gist.Post(group: "estudos", leaf: "html", body: "# html\n\nbody"),
+    gist.Post(group: "estudos", leaf: "notes.mdx", body: "# notes.mdx\n\nbody"),
+    gist.Post(group: "skipme", leaf: "keep", body: "# keep\n\nbody"),
+  ]
+  let #(menu, tpls) = menu_render.build(posts)
+  let rendered = layout.render(template, menu, tpls, "")
   let assert Ok(expected) = file_io.read_text("test/snapshots/end_to_end.html")
   case rendered == expected {
     True -> should.be_true(True)
     False -> {
-      // Print actual to help regenerate
       echo rendered
       should.equal(rendered, expected)
     }

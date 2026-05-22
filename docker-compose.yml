@@ -4,3 +4,5 @@ services:
     ports:
       - "3000:3000"
     restart: unless-stopped
+    environment:
+      BLOG_GIST_USER: Yuhigawa

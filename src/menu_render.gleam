@@ -1,9 +1,10 @@
+import gist
 import gleam/list
 import gleam/string
 import md
-import scanner
+import slug
 
-pub fn build(scan: List(scanner.Post)) -> #(String, String) {
+pub fn build(scan: List(gist.Post)) -> #(String, String) {
   let groups = group_by_first(scan)
   let menu =
     groups
@@ -13,8 +14,8 @@ pub fn build(scan: List(scanner.Post)) -> #(String, String) {
   let tpls =
     scan
     |> list.map(fn(p) {
-      let gid = slugify(p.group)
-      let lid = slugify(p.leaf)
+      let gid = slug.slugify(p.group)
+      let lid = slug.slugify(p.leaf)
       "<template id=\"template-"
       <> gid
       <> "-"
@@ -28,13 +29,13 @@ pub fn build(scan: List(scanner.Post)) -> #(String, String) {
   #(menu, tpls)
 }
 
-fn render_group(g: #(String, List(scanner.Post))) -> String {
+fn render_group(g: #(String, List(gist.Post))) -> String {
   let #(group, entries) = g
-  let gid = slugify(group)
+  let gid = slug.slugify(group)
   let items =
     entries
     |> list.map(fn(p) {
-      let lid = slugify(p.leaf)
+      let lid = slug.slugify(p.leaf)
       "<li class=\"submenu-item\" id=\""
       <> lid
       <> "\" data-group=\""
@@ -54,9 +55,7 @@ fn render_group(g: #(String, List(scanner.Post))) -> String {
   <> "</div>"
 }
 
-fn group_by_first(
-  scan: List(scanner.Post),
-) -> List(#(String, List(scanner.Post))) {
+fn group_by_first(scan: List(gist.Post)) -> List(#(String, List(gist.Post))) {
   // Preserve sort order; group consecutive same-group entries.
   list.fold(scan, [], fn(acc, p) {
     case acc {
@@ -72,60 +71,4 @@ fn group_by_first(
 
 fn render_post_body(body: String) -> String {
   md.to_html(body)
-}
-
-pub fn slugify(s: String) -> String {
-  s
-  |> string.lowercase
-  |> string.replace(" ", "-")
-  |> filter_id_chars
-}
-
-fn filter_id_chars(s: String) -> String {
-  s
-  |> string.to_graphemes
-  |> list.filter(fn(c) { is_alnum(c) || c == "-" || c == "_" })
-  |> string.concat
-}
-
-fn is_alnum(c: String) -> Bool {
-  case c {
-    "a"
-    | "b"
-    | "c"
-    | "d"
-    | "e"
-    | "f"
-    | "g"
-    | "h"
-    | "i"
-    | "j"
-    | "k"
-    | "l"
-    | "m"
-    | "n"
-    | "o"
-    | "p"
-    | "q"
-    | "r"
-    | "s"
-    | "t"
-    | "u"
-    | "v"
-    | "w"
-    | "x"
-    | "y"
-    | "z"
-    | "0"
-    | "1"
-    | "2"
-    | "3"
-    | "4"
-    | "5"
-    | "6"
-    | "7"
-    | "8"
-    | "9" -> True
-    _ -> False
-  }
 }

@@ -1,0 +1,259 @@
+import gleam/dict
+import gleam/dynamic.{type Dynamic}
+import gleam/http/request as http_req
+import gleam/httpc
+import gleam/int
+import gleam/io
+import gleam/json
+import gleam/list
+import gleam/result
+import gleam/string
+import slug
+
+const blog_prefix = "blog:"
+
+const md_suffix = ".md"
+
+pub type Post {
+  Post(group: String, leaf: String, body: String)
+}
+
+pub type GistError {
+  NetworkError(reason: String)
+  HttpError(status: Int)
+  ParseError(reason: String)
+}
+
+pub type HttpClient {
+  HttpClient(
+    list_gists: fn(String) -> Result(String, GistError),
+    fetch_raw: fn(String) -> Result(String, GistError),
+  )
+}
+
+/// Fetch all `blog:<group>:<leaf>.md` posts authored by `user`, using the
+/// supplied `HttpClient` capability for I/O. Pure assembly: list -> decode ->
+/// filter -> fetch each body -> sort by (slug(group), slug(leaf)) -> dedupe
+/// (first wins). Partial raw-fetch failures are logged and dropped; a
+/// list-call failure surfaces to the caller unchanged.
+pub fn fetch_all(
+  client: HttpClient,
+  user: String,
+) -> Result(List(Post), GistError) {
+  use list_json <- result.try(client.list_gists(user))
+  use entries <- result.try(decode_gist_list(list_json))
+  let candidates = collect_candidates(entries, user)
+  let posts = fetch_bodies(client, candidates)
+  Ok(dedupe(sort_by_slug(posts)))
+}
+
+/// Test-only re-export. See `build_raw_url`.
+pub fn build_raw_url_for_test(
+  user: String,
+  gist_id: String,
+  filename: String,
+) -> String {
+  build_raw_url(user, gist_id, filename)
+}
+
+/// Test-only re-export. See `parse_filename`.
+pub fn parse_filename_for_test(name: String) -> Result(#(String, String), Nil) {
+  parse_filename(name)
+}
+
+/// Returns `Ok(#(group, leaf))` for filenames matching `blog:<group>:<leaf>.md`
+/// with non-empty group and leaf, neither containing `:`. Rejects everything else.
+fn parse_filename(name: String) -> Result(#(String, String), Nil) {
+  use without_prefix <- with_prefix(name, blog_prefix)
+  use without_suffix <- with_suffix(without_prefix, md_suffix)
+  case string.split(without_suffix, ":") {
+    [group, leaf] ->
+      case group, leaf {
+        "", _ -> Error(Nil)
+        _, "" -> Error(Nil)
+        _, _ -> Ok(#(group, leaf))
+      }
+    _ -> Error(Nil)
+  }
+}
+
+fn with_prefix(
+  s: String,
+  prefix: String,
+  k: fn(String) -> Result(a, Nil),
+) -> Result(a, Nil) {
+  case string.starts_with(s, prefix) {
+    True -> k(string.drop_left(s, string.length(prefix)))
+    False -> Error(Nil)
+  }
+}
+
+fn with_suffix(
+  s: String,
+  suffix: String,
+  k: fn(String) -> Result(a, Nil),
+) -> Result(a, Nil) {
+  case string.ends_with(s, suffix) {
+    True -> k(string.drop_right(s, string.length(suffix)))
+    False -> Error(Nil)
+  }
+}
+
+// --- raw URL ---------------------------------------------------------------
+
+fn build_raw_url(user: String, gist_id: String, filename: String) -> String {
+  "https://gist.githubusercontent.com/"
+  <> user
+  <> "/"
+  <> gist_id
+  <> "/raw/"
+  <> filename
+}
+
+// --- decode ----------------------------------------------------------------
+
+type GistEntry {
+  GistEntry(id: String, filenames: List(String))
+}
+
+fn decode_gist_list(json_str: String) -> Result(List(GistEntry), GistError) {
+  let entry_decoder =
+    dynamic.decode2(
+      GistEntry,
+      dynamic.field("id", dynamic.string),
+      dynamic.field("files", files_keys_decoder),
+    )
+  json.decode(from: json_str, using: dynamic.list(entry_decoder))
+  |> result.map_error(fn(_) { ParseError("decode error") })
+}
+
+fn files_keys_decoder(
+  d: Dynamic,
+) -> Result(List(String), dynamic.DecodeErrors) {
+  // Decode the `files` object as a Dict<String, Dynamic> and project to keys.
+  // We intentionally ignore the value side — only filenames are needed.
+  dynamic.dict(dynamic.string, dynamic.dynamic)(d)
+  |> result.map(dict.keys)
+}
+
+// --- assembly --------------------------------------------------------------
+
+fn collect_candidates(
+  entries: List(GistEntry),
+  user: String,
+) -> List(#(String, String, String)) {
+  list.flat_map(entries, fn(e) {
+    list.filter_map(e.filenames, fn(filename) {
+      case parse_filename(filename) {
+        Error(_) -> Error(Nil)
+        Ok(#(g, l)) -> Ok(#(g, l, build_raw_url(user, e.id, filename)))
+      }
+    })
+  })
+}
+
+fn fetch_bodies(
+  client: HttpClient,
+  candidates: List(#(String, String, String)),
+) -> List(Post) {
+  list.filter_map(candidates, fn(c) {
+    let #(g, l, url) = c
+    case client.fetch_raw(url) {
+      Ok(body) -> Ok(Post(group: g, leaf: l, body: body))
+      Error(err) -> {
+        log_warn("fetch_raw failed for " <> url <> ": " <> error_label(err))
+        Error(Nil)
+      }
+    }
+  })
+}
+
+fn sort_by_slug(posts: List(Post)) -> List(Post) {
+  list.sort(posts, by: fn(a, b) {
+    let ka = slug.slugify(a.group) <> "/" <> slug.slugify(a.leaf)
+    let kb = slug.slugify(b.group) <> "/" <> slug.slugify(b.leaf)
+    string.compare(ka, kb)
+  })
+}
+
+fn dedupe(posts: List(Post)) -> List(Post) {
+  let #(kept, _seen) =
+    list.fold(posts, #([], []), fn(acc, p) {
+      let #(kept, seen) = acc
+      let key = slug.slugify(p.group) <> "/" <> slug.slugify(p.leaf)
+      case list.contains(seen, key) {
+        True -> {
+          log_warn("collision dropped: " <> key)
+          #(kept, seen)
+        }
+        False -> #([p, ..kept], [key, ..seen])
+      }
+    })
+  list.reverse(kept)
+}
+
+// --- logging ---------------------------------------------------------------
+
+fn log_warn(msg: String) -> Nil {
+  io.println_error("[gist] " <> msg)
+}
+
+fn error_label(err: GistError) -> String {
+  case err {
+    NetworkError(reason) -> "NetworkError(" <> reason <> ")"
+    HttpError(status) -> "HttpError(" <> int.to_string(status) <> ")"
+    ParseError(reason) -> "ParseError(" <> reason <> ")"
+  }
+}
+
+// --- live HTTP client ------------------------------------------------------
+
+/// An `HttpClient` whose callbacks hit the real GitHub API via `gleam_httpc`.
+/// `list_gists` calls `GET https://api.github.com/users/<user>/gists?per_page=100`
+/// with `accept: application/vnd.github+json` and a `user-agent` header.
+/// `fetch_raw` GETs the given URL with a `user-agent` header. Non-2xx
+/// responses map to `HttpError(status)`; transport errors map to
+/// `NetworkError(<label>)`.
+pub fn live_client() -> HttpClient {
+  HttpClient(list_gists: live_list_gists, fetch_raw: live_fetch_raw)
+}
+
+fn live_list_gists(user: String) -> Result(String, GistError) {
+  let url = "https://api.github.com/users/" <> user <> "/gists?per_page=100"
+  case http_req.to(url) {
+    Error(_) -> Error(NetworkError("invalid url: " <> url))
+    Ok(req) -> {
+      req
+      |> http_req.prepend_header("accept", "application/vnd.github+json")
+      |> http_req.prepend_header("user-agent", "yuhigawa-blog-engine")
+      |> send_and_extract
+    }
+  }
+}
+
+fn live_fetch_raw(url: String) -> Result(String, GistError) {
+  case http_req.to(url) {
+    Error(_) -> Error(NetworkError("invalid url: " <> url))
+    Ok(req) -> {
+      req
+      |> http_req.prepend_header("user-agent", "yuhigawa-blog-engine")
+      |> send_and_extract
+    }
+  }
+}
+
+fn send_and_extract(
+  req: http_req.Request(String),
+) -> Result(String, GistError) {
+  let config =
+    httpc.configure()
+    |> httpc.timeout(5000)
+  case httpc.dispatch(config, req) {
+    Ok(resp) ->
+      case resp.status {
+        s if s >= 200 && s < 300 -> Ok(resp.body)
+        s -> Error(HttpError(s))
+      }
+    Error(_reason) -> Error(NetworkError("httpc transport error"))
+  }
+}

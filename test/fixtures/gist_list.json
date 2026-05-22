@@ -1,0 +1,16 @@
+[
+  {
+    "id": "abc123",
+    "files": {
+      "blog:estudos:html.md": { "filename": "blog:estudos:html.md" },
+      "blog:estudos:css.md":  { "filename": "blog:estudos:css.md" },
+      "notes.md":             { "filename": "notes.md" }
+    }
+  },
+  {
+    "id": "def456",
+    "files": {
+      "blog:ensaios:opening.md": { "filename": "blog:ensaios:opening.md" }
+    }
+  }
+]

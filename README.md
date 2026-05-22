@@ -1,18 +1,36 @@
 # blogging — a tiny gleam blog engine
 
-A live HTTP server that renders a personal blog from a directory of markdown files.
+A live HTTP server that renders a personal blog from a GitHub user's public gists.
 
 ## How it works
 
-Each markdown file under `src/assets/posts/<group>/<leaf>.md` becomes a sidebar entry. The directory is the menu — no config file. On every request the server scans the directory, renders each post to HTML, and splices the result into `src/assets/index.html` via the `<!-- {{menu}} -->` and `<!-- {{templates}} -->` placeholders. The browser's `<template>` cloning JS swaps the active post into `#dynamic-content`.
+Posts live in the configured user's public GitHub gists. Any file inside any of
+those gists whose name matches `blog:<group>:<leaf>.md` becomes a sidebar entry
+under `<group>` with label `<leaf>` and content rendered from the file body.
+Files not matching the pattern are silently ignored.
+
+The server reads `BLOG_GIST_USER` at boot. On every request to `/`, it fetches
+`GET https://api.github.com/users/<user>/gists` (1 call, anonymous quota of
+60/hr per server IP), then fetches each matching file body via
+`gist.githubusercontent.com/<user>/<id>/raw/<filename>` (no quota). The page
+always reflects the live state of the gists.
+
+If GitHub is unreachable, the page still loads with an empty menu and a small
+banner in the sidebar; the status code stays 200.
 
 ## Add a post
 
-Create a file. That's it.
+Create a file in any of your public gists named `blog:<group>:<leaf>.md`.
+That's it. One gist can hold multiple `blog:*` files.
 
-    src/assets/posts/estudos/intro.md
+## Configure
 
-It appears in the `estudos` group as `intro`. Slug rules: the `id=` attribute is the filename lowercased, whitespace → `-`, any char outside `[a-z0-9_-]` dropped. Files starting with `.` and `README.md` are ignored. Groups with no `.md` files are hidden.
+Set `BLOG_GIST_USER` to your GitHub username in `docker-compose.yml`:
+
+```yaml
+environment:
+  BLOG_GIST_USER: <your-github-username>
+```
 
 ## Markdown subset
 
@@ -36,4 +54,5 @@ Snapshot tests live under `test/snapshots/`. To regenerate after an intentional 
 
 ## Status
 
-Local-MD phase. Gist integration, caching, per-post URLs, and syntax highlighting are deferred.
+Gist phase. Caching, per-post URLs, syntax highlighting, and authenticated
+fetch (private gists, raised rate limit) are deferred.
