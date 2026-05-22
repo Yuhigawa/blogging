@@ -1,8 +1,10 @@
 import file_io
+import gist
 import gleam/bytes_builder.{type BytesBuilder}
 import gleam/http/elli
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
+import gleam/list
 import gleam/string
 import layout
 import menu_render
@@ -13,6 +15,12 @@ pub fn main() {
   let assert Ok(template) = file_io.read_text("src/assets/index.html")
   let assert Ok(_) = layout.validate(template)
   let assert Ok(scan) = scanner.scan("src/assets/posts")
+  let scan =
+    scan
+    |> list.map(fn(p) {
+      let scanner.Post(group: g, leaf: l, body: b) = p
+      gist.Post(group: g, leaf: l, body: b)
+    })
   let #(menu, tpls) = menu_render.build(scan)
   let rendered_index = layout.render(template, menu, tpls)
   elli.become(fn(req) { handler(rendered_index, req) }, on_port: 3000)

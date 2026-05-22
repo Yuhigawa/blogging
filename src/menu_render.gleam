@@ -1,9 +1,9 @@
+import gist
 import gleam/list
 import gleam/string
 import md
-import scanner
 
-pub fn build(scan: List(scanner.Post)) -> #(String, String) {
+pub fn build(scan: List(gist.Post)) -> #(String, String) {
   let groups = group_by_first(scan)
   let menu =
     groups
@@ -28,7 +28,7 @@ pub fn build(scan: List(scanner.Post)) -> #(String, String) {
   #(menu, tpls)
 }
 
-fn render_group(g: #(String, List(scanner.Post))) -> String {
+fn render_group(g: #(String, List(gist.Post))) -> String {
   let #(group, entries) = g
   let gid = slugify(group)
   let items =
@@ -54,9 +54,7 @@ fn render_group(g: #(String, List(scanner.Post))) -> String {
   <> "</div>"
 }
 
-fn group_by_first(
-  scan: List(scanner.Post),
-) -> List(#(String, List(scanner.Post))) {
+fn group_by_first(scan: List(gist.Post)) -> List(#(String, List(gist.Post))) {
   // Preserve sort order; group consecutive same-group entries.
   list.fold(scan, [], fn(acc, p) {
     case acc {
