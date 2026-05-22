@@ -1,5 +1,6 @@
 import gleam/list
 import gleam/string
+import md
 import scanner
 
 pub fn build(scan: List(scanner.Post)) -> #(String, String) {
@@ -69,9 +70,8 @@ fn group_by_first(
   |> list.reverse
 }
 
-fn render_post_body(md: String) -> String {
-  // Stand-in until Task 6 lands real md.to_html. Wrap in <p> to keep visible.
-  "<p>" <> md <> "</p>"
+fn render_post_body(body: String) -> String {
+  md.to_html(body)
 }
 
 pub fn slugify(s: String) -> String {
