@@ -283,3 +283,4 @@ Append lessons here as the implementation proceeds (same convention as `2026-05-
 
 - **Step 1** — Plan claimed pre-task baseline was 70 tests; actual baseline was 69. Same count before and after Task 1. Takeaway: trust `gleam test` output, not plan-doc counts. (Cosmetic only.)
 - **Step 1** — Plan's File Map mentioned a "transitive `gleam_dynamic`" added by `gleam_httpc`/`gleam_json`; in practice `manifest.toml` did not show it. Task 4 may need an explicit `gleam add gleam_dynamic` when decoder code lands.
+- **Step 2** — When extending `layout.render` with a new token, never delete the substitution-order safety comment. Reviewer caught the deletion and asked for it back, extended to cover the new token. Takeaway: invariants documented near the code that depends on them survive churn; rules in only-spec-text rot.
