@@ -37,6 +37,9 @@ pub fn render(
   templates_html: String,
   banner_html: String,
 ) -> String {
+  // Substitution order is safe: menu_html comes from menu_render where slugify
+  // strips `<`, `>`, `{`, `}`, so it cannot smuggle a `templates`/`banner`
+  // token; templates_html and banner_html are server-controlled literals.
   template
   |> string.replace(menu_token, menu_html)
   |> string.replace(templates_token, templates_html)
