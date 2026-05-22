@@ -19,9 +19,13 @@ pub fn main() {
 }
 
 fn handler(rendered_index: String, req: Request(t)) -> Response(BytesBuilder) {
-  case string.starts_with(req.path, "/static/") {
-    True -> static_serve.serve(string.drop_left(req.path, 8))
-    False -> serve_index(rendered_index)
+  case req.path {
+    "/" -> serve_index(rendered_index)
+    path ->
+      case string.starts_with(path, "/static/") {
+        True -> static_serve.serve(string.drop_left(path, 8))
+        False -> not_found()
+      }
   }
 }
 
@@ -29,4 +33,10 @@ fn serve_index(rendered_index: String) -> Response(BytesBuilder) {
   response.new(200)
   |> response.prepend_header("content-type", "text/html; charset=utf-8")
   |> response.set_body(bytes_builder.from_string(rendered_index))
+}
+
+fn not_found() -> Response(BytesBuilder) {
+  response.new(404)
+  |> response.prepend_header("content-type", "text/plain; charset=utf-8")
+  |> response.set_body(bytes_builder.from_string("not found"))
 }
