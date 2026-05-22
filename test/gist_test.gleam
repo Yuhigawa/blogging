@@ -1,5 +1,6 @@
 import file_io
 import gist
+import gleam/erlang/os
 import gleam/list
 import gleeunit/should
 
@@ -172,4 +173,19 @@ pub fn build_raw_url_test() {
 
 fn list_at(xs: List(a), i: Int) -> Result(a, Nil) {
   list.drop(xs, i) |> list.first
+}
+
+pub fn live_fetch_yuhigawa_test() {
+  case os.get_env("BLOG_LIVE_TEST") {
+    Ok("1") -> {
+      let client = gist.live_client()
+      case gist.fetch_all(client, "Yuhigawa") {
+        Ok(posts) -> should.be_true(list.length(posts) >= 0)
+        Error(err) ->
+          // Surface the failure if the live wiring actually broke.
+          should.equal(err, gist.NetworkError("live test expected Ok"))
+      }
+    }
+    _ -> should.be_true(True)
+  }
 }

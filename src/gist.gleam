@@ -1,5 +1,7 @@
 import gleam/dict
 import gleam/dynamic.{type Dynamic}
+import gleam/http/request as http_req
+import gleam/httpc
 import gleam/int
 import gleam/io
 import gleam/json
@@ -251,5 +253,54 @@ fn error_label(err: GistError) -> String {
     NetworkError(reason) -> "NetworkError(" <> reason <> ")"
     HttpError(status) -> "HttpError(" <> int.to_string(status) <> ")"
     ParseError(reason) -> "ParseError(" <> reason <> ")"
+  }
+}
+
+// --- live HTTP client ------------------------------------------------------
+
+/// An `HttpClient` whose callbacks hit the real GitHub API via `gleam_httpc`.
+/// `list_gists` calls `GET https://api.github.com/users/<user>/gists?per_page=100`
+/// with `accept: application/vnd.github+json` and a `user-agent` header.
+/// `fetch_raw` GETs the given URL with a `user-agent` header. Non-2xx
+/// responses map to `HttpError(status)`; transport errors map to
+/// `NetworkError(<label>)`.
+pub fn live_client() -> HttpClient {
+  HttpClient(list_gists: live_list_gists, fetch_raw: live_fetch_raw)
+}
+
+fn live_list_gists(user: String) -> Result(String, GistError) {
+  let url = "https://api.github.com/users/" <> user <> "/gists?per_page=100"
+  case http_req.to(url) {
+    Error(_) -> Error(NetworkError("invalid url: " <> url))
+    Ok(req) -> {
+      req
+      |> http_req.prepend_header("accept", "application/vnd.github+json")
+      |> http_req.prepend_header("user-agent", "yuhigawa-blog-engine")
+      |> send_and_extract
+    }
+  }
+}
+
+fn live_fetch_raw(url: String) -> Result(String, GistError) {
+  case http_req.to(url) {
+    Error(_) -> Error(NetworkError("invalid url: " <> url))
+    Ok(req) -> {
+      req
+      |> http_req.prepend_header("user-agent", "yuhigawa-blog-engine")
+      |> send_and_extract
+    }
+  }
+}
+
+fn send_and_extract(
+  req: http_req.Request(String),
+) -> Result(String, GistError) {
+  case httpc.send(req) {
+    Ok(resp) ->
+      case resp.status {
+        s if s >= 200 && s < 300 -> Ok(resp.body)
+        s -> Error(HttpError(s))
+      }
+    Error(_reason) -> Error(NetworkError("httpc transport error"))
   }
 }
