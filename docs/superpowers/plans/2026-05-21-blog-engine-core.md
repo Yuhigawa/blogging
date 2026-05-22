@@ -45,11 +45,12 @@
 
 **TDD cadence:** write failing test → run to confirm RED → minimal impl → run to confirm GREEN → commit.
 
-**Run commands:**
-- All tests: `gleam test`
-- Single test: `gleam test --target=erlang` then filter by name in the output (gleeunit doesn't have a built-in single-test runner; run all and grep for the test name)
-- Format check: `gleam format --check src test`
-- Format apply: `gleam format src test`
+**Run commands (toolchain lives in Docker):**
+- All tests: `docker compose run --rm --no-deps blogging gleam test`
+- Format check: `docker compose run --rm --no-deps blogging gleam format --check src test`
+- Format apply: `docker compose run --rm --no-deps blogging gleam format src test`
+- Boot server: `docker compose up` (port 3000)
+- Single test: gleeunit has no native filter; run the whole suite and grep the output for the test name.
 
 **Commit format:** `feat: <what>` for new behavior, `refactor: <what>` for moves, `test: <what>` for test-only commits, `chore: <what>` for build/docs. Trailer: `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>`.
 
