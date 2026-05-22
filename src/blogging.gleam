@@ -2,12 +2,18 @@ import gleam/bytes_builder.{type BytesBuilder}
 import gleam/http/elli
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
+import gleam/string
 import render
+import static_serve
 
 pub fn server_handler(req: Request(t)) -> Response(BytesBuilder) {
   case req.path {
-    "/styles.css" -> serve_css()
-    _ -> serve_index()
+    "/styles.css" -> static_serve.serve("styles.css")
+    _ ->
+      case string.starts_with(req.path, "/static/") {
+        True -> static_serve.serve(string.drop_left(req.path, 8))
+        False -> serve_index()
+      }
   }
 }
 
@@ -20,15 +26,6 @@ fn serve_index() -> Response(BytesBuilder) {
   response.new(200)
   |> response.prepend_header("made-with", "Gleam")
   |> response.prepend_header("content-type", "text/html; charset=utf-8")
-  |> response.set_body(body)
-}
-
-fn serve_css() -> Response(BytesBuilder) {
-  let css = render.file_to_string("styles.css")
-  let body = bytes_builder.from_string(css)
-
-  response.new(200)
-  |> response.prepend_header("content-type", "text/css; charset=utf-8")
   |> response.set_body(body)
 }
 
