@@ -52,7 +52,7 @@
 - Boot server: `docker compose up` (port 3000)
 - Single test: gleeunit has no native filter; run the whole suite and grep the output for the test name.
 
-**Commit format:** `feat: <what>` for new behavior, `refactor: <what>` for moves, `test: <what>` for test-only commits, `chore: <what>` for build/docs. Trailer: `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>`.
+**Commit format:** `feat: <what>` for new behavior, `refactor: <what>` for moves, `test: <what>` for test-only commits, `chore: <what>` for build/docs.
 
 **After each Task:** dispatch reviewer subagent as described in the spec's reviewer-loop. Apply blocker/major findings before starting next Task. Append a one-line lesson to spec's Hardening Log only if it leads to a future-step convention or test.
 
@@ -237,9 +237,7 @@ Run: `./start_server.sh`, browse `http://localhost:3000`, confirm sidebar and co
 
 ```bash
 git add src/markdown_server_ffi.erl src/file_io.gleam src/render.gleam test/file_io_test.gleam
-git commit -m "feat: typed FFI errors via file_io module
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
+git commit -m "feat: typed FFI errors via file_io module"
 ```
 
 - [ ] **Step 9: Dispatch reviewer subagent** (background) with Task 1 done-when + diff.
@@ -414,9 +412,7 @@ Run: `./start_server.sh`, browse `/`, `/styles.css`, `/static/styles.css`, `/sta
 
 ```bash
 git add src/static_serve.gleam src/blogging.gleam src/assets/static/styles.css test/static_serve_test.gleam
-git commit -m "feat: /static/* handler with mime inference + traversal guard
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
+git commit -m "feat: /static/* handler with mime inference + traversal guard"
 ```
 
 - [ ] **Step 7: Reviewer subagent** (background) with Task 2 done-when + diff.
@@ -489,9 +485,7 @@ Check: `curl -i http://localhost:3000/styles.css | head -1` → `HTTP/1.1 404`.
 
 ```bash
 git add -A
-git commit -m "refactor: move posts under posts/<group>/<leaf>.md
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
+git commit -m "refactor: move posts under posts/<group>/<leaf>.md"
 ```
 
 - [ ] **Step 7: Reviewer subagent** with Task 3 done-when + diff.
@@ -645,9 +639,7 @@ Run: `gleam test` → scanner tests green; existing tests still green.
 
 ```bash
 git add src/scanner.gleam test/scanner_test.gleam test/fixtures
-git commit -m "feat: filesystem scanner with sort + extension/hidden filter
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
+git commit -m "feat: filesystem scanner with sort + extension/hidden filter"
 ```
 
 - [ ] **Step 7: Reviewer subagent** with Task 4 done-when + diff.
@@ -1035,9 +1027,7 @@ git commit -m "feat: filesystem-driven menu via scanner+menu_render+layout
 - placeholders {{menu}} and {{templates}} replace flatten_strings hack
 - template ids use template-<group>-<leaf> to avoid cross-group collision
 - end-to-end snapshot test added
-- xss_pending.gleam.skip placeholder pending Task 6a
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
+- xss_pending.gleam.skip placeholder pending Task 6a"
 ```
 
 - [ ] **Step 13: Reviewer subagent** with Task 5 done-when + diff.
@@ -1211,9 +1201,7 @@ End-to-end output changed because bodies are now real HTML. Re-run, copy fresh o
 gleam test          # all green
 gleam format src test
 git add -A
-git commit -m "feat(md): headings 1-6, paragraphs, blank-line handling, html escaping
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
+git commit -m "feat(md): headings 1-6, paragraphs, blank-line handling, html escaping"
 ```
 
 - [ ] **Step 8: Reviewer subagent** with Task 6a done-when + diff.
@@ -1351,9 +1339,7 @@ Run: `gleam test`. All 6a tests still pass; 6b tests pass.
 git add src/md.gleam test/md_test.gleam
 git commit -m "feat(md): inline emphasis + code spans + backslash escape
 
-Code spans suppress emphasis; nested emphasis intentionally literal.
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
+Code spans suppress emphasis; nested emphasis intentionally literal."
 ```
 
 - [ ] **Step 6: Reviewer subagent.**
@@ -1418,9 +1404,7 @@ Note: link text is already HTML-escaped by the outer `escape(text)` call before 
 - [ ] **Step 4: Run + green + commit**
 
 ```bash
-git commit -am "feat(md): inline links with attribute escaping
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
+git commit -am "feat(md): inline links with attribute escaping"
 ```
 
 - [ ] **Step 5: Reviewer subagent.**
@@ -1464,9 +1448,7 @@ Wrap items in `<li>` (each line is one item — no nested lists in this scope), 
 - [ ] **Step 4: Run + green + commit**
 
 ```bash
-git commit -am "feat(md): unordered and ordered lists with inline content
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
+git commit -am "feat(md): unordered and ordered lists with inline content"
 ```
 
 - [ ] **Step 5: Reviewer subagent.**
@@ -1499,9 +1481,7 @@ pub fn fence_preserves_internal_blank_line_test() {
 - [ ] **Step 4: Run + green + commit**
 
 ```bash
-git commit -am "feat(md): fenced code blocks with escaped content
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
+git commit -am "feat(md): fenced code blocks with escaped content"
 ```
 
 - [ ] **Step 5: Reviewer subagent.**
@@ -1528,9 +1508,7 @@ pub fn hr_test() {
 - [ ] **Step 4: Run + green + commit**
 
 ```bash
-git commit -am "feat(md): blockquote and horizontal rule
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
+git commit -am "feat(md): blockquote and horizontal rule"
 ```
 
 - [ ] **Step 5: Reviewer subagent.**
@@ -1543,9 +1521,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 ```bash
 git add test/md_integration_test.gleam
-git commit -m "test(md): cumulative integration snapshot
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
+git commit -m "test(md): cumulative integration snapshot"
 ```
 
 ---
@@ -1607,9 +1583,7 @@ Local-MD phase. Gist integration, caching, per-post URLs, and syntax highlightin
 
 ```bash
 git add README.md
-git commit -m "docs: rewrite README for the blog engine model
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
+git commit -m "docs: rewrite README for the blog engine model"
 ```
 
 - [ ] **Step 3: Reviewer subagent.**
