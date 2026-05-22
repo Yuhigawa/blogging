@@ -558,6 +558,7 @@ body::before {
 
 /* ----- responsive ----- */
 
+/* Tablet + below: stack sidebar above content. Drop sticky positioning. */
 @media (max-width: 900px) {
     .container { grid-template-columns: 1fr; }
     .sidebar {
@@ -566,9 +567,72 @@ body::before {
         border-right: none;
         border-bottom: 1px solid var(--rule);
         padding: 40px 32px;
+        gap: 32px;
     }
     .content { padding: 56px 32px 80px; }
     .year-mark { display: none; }
+
+    /* Bigger tap targets — phones and touch tablets. Padding adds room
+       around each row without disturbing the baseline-aligned bullet. */
+    .submenu-item { padding: 10px 0; min-height: 44px; }
+    .sidebar-foot a { padding: 6px 0; display: inline-block; }
+}
+
+/* Phones: tighter padding, smaller headings, smaller avatar. */
+@media (max-width: 560px) {
+    .sidebar { padding: 28px 20px 24px; gap: 24px; }
+    .content { padding: 36px 20px 64px; }
+
+    .brand { font-size: 1.3rem; gap: 8px; }
+    .brand .domain { font-size: 0.62rem; }
+
+    .sun { width: 72px; height: 72px; }
+    .description { font-size: 0.9rem; max-width: 28ch; }
+
+    /* h1 clamp floored at 2.75rem is still ~44px on a phone — too big. */
+    #dynamic-content h1 {
+        font-size: clamp(2rem, 9vw, 2.5rem);
+    }
+    #dynamic-content h1::after { margin-top: 20px; }
+    #dynamic-content h2 { font-size: 1.45rem; margin: 40px 0 14px; gap: 12px; }
+    #dynamic-content h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+
+    /* Drop cap dominates on narrow screens — let the paragraph flow normally. */
+    #dynamic-content h1 + p::first-letter {
+        font-size: 1em;
+        float: none;
+        padding: 0;
+        color: inherit;
+        font-family: inherit;
+        font-style: inherit;
+    }
+
+    /* Content-header: stack the eyebrow above the year ideograph. */
+    .content-header { flex-direction: column; gap: 16px; margin-bottom: 40px; }
+    .year { font-size: 1.25rem; }
+
+    /* Code blocks: own the full content width, scroll horizontally for long lines. */
+    #dynamic-content pre {
+        margin-inline: -20px;
+        padding: 16px 20px;
+        font-size: 0.8rem;
+        max-width: none;
+        border-left-width: 3px;
+    }
+
+    /* Empty-state line: smaller and tighter. */
+    #dynamic-content:empty::before {
+        font-size: 1.2rem;
+        margin-top: 48px;
+        max-width: 24ch;
+    }
+
+    /* Blockquote dialled down for narrow viewports. */
+    #dynamic-content blockquote {
+        font-size: 1.1rem;
+        padding-left: 18px;
+        margin: 24px 0;
+    }
 }
 
 .error-banner {
