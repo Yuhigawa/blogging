@@ -353,6 +353,15 @@ body::before {
 
 #dynamic-content {
     animation: fade-in 0.5s ease;
+    /* Long inline tokens (URLs, fully-qualified identifiers in <code>) would
+       otherwise be unbreakable and push their parent block past the viewport
+       on narrow screens. `anywhere` lets the layout break at any character
+       only when needed to prevent overflow. */
+    overflow-wrap: anywhere;
+}
+
+#dynamic-content code {
+    overflow-wrap: anywhere;
 }
 
 #dynamic-content:empty::before {
