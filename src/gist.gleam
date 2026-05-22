@@ -295,7 +295,10 @@ fn live_fetch_raw(url: String) -> Result(String, GistError) {
 fn send_and_extract(
   req: http_req.Request(String),
 ) -> Result(String, GistError) {
-  case httpc.send(req) {
+  let config =
+    httpc.configure()
+    |> httpc.timeout(5000)
+  case httpc.dispatch(config, req) {
     Ok(resp) ->
       case resp.status {
         s if s >= 200 && s < 300 -> Ok(resp.body)
