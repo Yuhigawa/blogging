@@ -569,11 +569,15 @@ body::before {
 /* ----- responsive ----- */
 
 /* Tablet + below: stack sidebar above content. Drop sticky positioning.
-   The minmax(0, 1fr) (not bare 1fr) is load-bearing: it lets the grid
-   item shrink below its content min-size, so a long unbreakable token
-   inside <pre> can't widen the column past the viewport. */
+   `minmax(0, 100%)` (not `minmax(0, 1fr)`) is load-bearing here: with
+   `1fr`, CSS grid still lets the track grow to its content's max-content
+   size, so a long unbreakable token inside <pre> can widen the column
+   to ~880px (the .content max-width) on a 412px phone. `100%` strictly
+   caps the track at the grid container's width.
+   `.content` also needs an explicit mobile `max-width: 100%` to override
+   the desktop's `max-width: 880px`. */
 @media (max-width: 900px) {
-    .container { grid-template-columns: minmax(0, 1fr); }
+    .container { grid-template-columns: minmax(0, 100%); }
     .sidebar {
         position: static;
         height: auto;
@@ -583,7 +587,11 @@ body::before {
         gap: 32px;
         min-width: 0;
     }
-    .content { padding: 56px 32px 80px; min-width: 0; }
+    .content {
+        padding: 56px 32px 80px;
+        min-width: 0;
+        max-width: 100%;
+    }
     .year-mark { display: none; }
 
     /* Bigger tap targets — phones and touch tablets. Padding adds room
