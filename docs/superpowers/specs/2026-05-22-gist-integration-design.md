@@ -280,3 +280,6 @@ Step 6 is the riskiest single commit but is now strictly additive — scanner is
 ## Hardening Log
 
 Append lessons here as the implementation proceeds (same convention as `2026-05-21-blog-engine-core-design.md`). Each entry: step number, issue, fix, takeaway.
+
+- **Step 1** — Plan claimed pre-task baseline was 70 tests; actual baseline was 69. Same count before and after Task 1. Takeaway: trust `gleam test` output, not plan-doc counts. (Cosmetic only.)
+- **Step 1** — Plan's File Map mentioned a "transitive `gleam_dynamic`" added by `gleam_httpc`/`gleam_json`; in practice `manifest.toml` did not show it. Task 4 may need an explicit `gleam add gleam_dynamic` when decoder code lands.
