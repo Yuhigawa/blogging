@@ -1,21 +1,42 @@
+import file_io
 import gleam/bytes_builder.{type BytesBuilder}
 import gleam/http/elli
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
-import render
-
-pub fn server_handler(_request: Request(t)) -> Response(BytesBuilder) {
-  // let html_content = render.convert_markdown_to_html("main.md")
-  let html_content = render.file_to_string("index.html")
-  let concatenated_content =
-    render.concatenate_templates(html_content, ["submenu1.md", "submenu2.md"])
-  let body = bytes_builder.from_string(concatenated_content)
-
-  response.new(200)
-  |> response.prepend_header("made-with", "Gleam")
-  |> response.set_body(body)
-}
+import gleam/string
+import layout
+import menu_render
+import scanner
+import static_serve
 
 pub fn main() {
-  elli.become(server_handler, on_port: 3000)
+  let assert Ok(template) = file_io.read_text("src/assets/index.html")
+  let assert Ok(_) = layout.validate(template)
+  let assert Ok(scan) = scanner.scan("src/assets/posts")
+  let #(menu, tpls) = menu_render.build(scan)
+  let rendered_index = layout.render(template, menu, tpls)
+  elli.become(fn(req) { handler(rendered_index, req) }, on_port: 3000)
+}
+
+fn handler(rendered_index: String, req: Request(t)) -> Response(BytesBuilder) {
+  case req.path {
+    "/" -> serve_index(rendered_index)
+    path ->
+      case string.starts_with(path, "/static/") {
+        True -> static_serve.serve(string.drop_left(path, 8))
+        False -> not_found()
+      }
+  }
+}
+
+fn serve_index(rendered_index: String) -> Response(BytesBuilder) {
+  response.new(200)
+  |> response.prepend_header("content-type", "text/html; charset=utf-8")
+  |> response.set_body(bytes_builder.from_string(rendered_index))
+}
+
+fn not_found() -> Response(BytesBuilder) {
+  response.new(404)
+  |> response.prepend_header("content-type", "text/plain; charset=utf-8")
+  |> response.set_body(bytes_builder.from_string("not found"))
 }
