@@ -60,13 +60,14 @@ fn decode_atom_error(a: Atom) -> FileError {
 }
 
 fn decode_tuple_error(d: Dynamic) -> FileError {
+  // Strict: only `{other, Binary}` produces `Other(message)`. Any other tuple
+  // shape (different tag atom, wrong arity, non-binary payload) falls through
+  // to `unrecognized()`. If the FFI grows new tuple variants this decoder must
+  // be updated explicitly — that's the intended contract.
+  let other = atom.create_from_string("other")
   case dynamic.tuple2(atom.from_dynamic, dynamic.string)(d) {
-    Ok(#(tag, message)) ->
-      case atom.to_string(tag) {
-        "other" -> Other(message)
-        _ -> unrecognized()
-      }
-    Error(_) -> unrecognized()
+    Ok(#(tag, message)) if tag == other -> Other(message)
+    _ -> unrecognized()
   }
 }
 
