@@ -53,8 +53,10 @@ body::before {
 
 .container {
     display: grid;
-    grid-template-columns: 340px 1fr;
+    grid-template-columns: 340px minmax(0, 1fr);
     min-height: 100vh;
+    max-width: 1600px;
+    margin-inline: auto;
     position: relative;
     z-index: 2;
 }
@@ -79,6 +81,7 @@ body::before {
 .content {
     padding: 88px 96px 120px;
     max-width: 880px;
+    margin-inline: auto;
     position: relative;
 }
 
