@@ -42,7 +42,11 @@ pub fn concatenate_templates(
 }
 
 fn get_first_segment(file_name: String) -> String {
-  case string.split(file_name, ".") {
+  let basename = case list.last(string.split(file_name, "/")) {
+    Ok(name) -> name
+    Error(_) -> file_name
+  }
+  case string.split(basename, ".") {
     [first, ..] -> first
     [] -> ""
   }
