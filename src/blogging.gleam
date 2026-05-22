@@ -4,15 +4,31 @@ import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import render
 
-pub fn server_handler(_request: Request(t)) -> Response(BytesBuilder) {
-  // let html_content = render.convert_markdown_to_html("main.md")
+pub fn server_handler(req: Request(t)) -> Response(BytesBuilder) {
+  case req.path {
+    "/styles.css" -> serve_css()
+    _ -> serve_index()
+  }
+}
+
+fn serve_index() -> Response(BytesBuilder) {
   let html_content = render.file_to_string("index.html")
   let concatenated_content =
-    render.concatenate_templates(html_content, ["submenu1.md", "submenu2.md"])
+    render.concatenate_templates(html_content, ["html.md", "css.md"])
   let body = bytes_builder.from_string(concatenated_content)
 
   response.new(200)
   |> response.prepend_header("made-with", "Gleam")
+  |> response.prepend_header("content-type", "text/html; charset=utf-8")
+  |> response.set_body(body)
+}
+
+fn serve_css() -> Response(BytesBuilder) {
+  let css = render.file_to_string("styles.css")
+  let body = bytes_builder.from_string(css)
+
+  response.new(200)
+  |> response.prepend_header("content-type", "text/css; charset=utf-8")
   |> response.set_body(body)
 }
 

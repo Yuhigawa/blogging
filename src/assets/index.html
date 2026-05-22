@@ -3,116 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="styles.css">
-    <title>Blog Layout</title>
+    <title>yuhigawa — fragments</title>
 </head>
-<style>
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-}
-
-.container {
-    display: flex;
-    height: 100vh;
-}
-
-.sidebar {
-    width: 25%;
-    background-color: #f0f0f0;
-    padding: 20px;
-    box-sizing: border-box;
-}
-
-.profile {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.circle {
-    width: 100px;
-    height: 100px;
-    background-color: #cccccc;
-    border-radius: 50%;
-    margin: 0 auto;
-}
-
-.description {
-    margin-top: 10px;
-    font-weight: bold;
-}
-
-.menu ul {
-    list-style-type: none;
-    padding: 0;
-}
-
-.menu li {
-    margin: 10px 0;
-}
-
-.menu ul ul {
-    padding-left: 20px;
-}
-
-.content {
-    width: 75%;
-    padding: 40px;
-    box-sizing: border-box;
-}
-
-h1 {
-    font-size: 2em;
-    margin-bottom: 20px;
-}
-
-p {
-    line-height: 1.6;
-}
-</style>
 <body>
     <div class="container">
         <aside class="sidebar">
-            <div class="profile">
-                <div class="circle"></div>
-                <p class="description">description</p>
-            </div>
+            <header class="masthead">
+                <div class="brand">
+                    <span class="dot"></span>
+                    <span>yuhigawa</span>
+                    <span class="domain">blog.yuhigawa.dev</span>
+                </div>
+
+                <div class="profile">
+                    <div class="sun" aria-hidden="true"></div>
+                    <p class="description">
+                        Notes from the river at dusk &mdash; <em>fragments</em> on languages, runtimes &amp; the shape of code.
+                    </p>
+                </div>
+            </header>
+
             <nav class="menu">
-                <ul>
-                    <li>Menu 1
-                        <ul>
-                            <li class="submenu-item" id="submenu1" style="cursor: pointer;">submenu 1</li>
-                            <li class="submenu-item" id="submenu2" style="cursor: pointer;">submenu 2</li>
-                        </ul>
-                    </li>
-                    <li>Menu 2
-                        <ul>
-                            <li class="submenu-item" id="submenu1" style="cursor: pointer;">submenu 1</li>
-                            <li class="submenu-item" id="submenu2" style="cursor: pointer;">submenu 2</li>
-                        </ul>
-                    </li>
-                </ul>
+                <div class="menu-group">
+                    <div class="group-label"><span class="num">01</span> Estudos</div>
+                    <ul>
+                        <li class="submenu-item" id="html">html</li>
+                        <li class="submenu-item" id="css">css</li>
+                    </ul>
+                </div>
+
+                <div class="menu-group">
+                    <div class="group-label"><span class="num">02</span> Ensaios</div>
+                    <ul>
+                        <li class="submenu-item" id="beam">on the beam</li>
+                        <li class="submenu-item" id="gleam">why gleam</li>
+                    </ul>
+                </div>
             </nav>
+
+            <footer class="sidebar-foot">
+                <span>MMXXVI &mdash; <a href="https://github.com/yuhigawa" target="_blank" rel="noopener">github</a></span>
+                <span>made with gleam &amp; erlang</span>
+            </footer>
         </aside>
-        
+
         <main class="content">
-            <div id="dynamic-content"></div>
+            <div class="year-mark">MMXXVI</div>
+
+            <div class="content-header">
+                <div class="eyebrow">
+                    <span class="num">№ 001</span>
+                    <span class="sep"></span>
+                    <span>fragments</span>
+                </div>
+                <div class="year">夕</div>
+            </div>
+
+            <article id="dynamic-content"></article>
         </main>
     </div>
-</body>
-<script>
-    document.querySelectorAll('.submenu-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const templateId = `template-${this.id}`;
-            const template = document.getElementById(templateId);
-            if (template) {
-                const clone = document.importNode(template.content, true);
-                const dynamicContent = document.getElementById('dynamic-content');
-                dynamicContent.innerHTML = '';
-                dynamicContent.appendChild(clone);
-            }
+
+    <script>
+        const slot = document.getElementById('dynamic-content');
+        const items = document.querySelectorAll('.submenu-item');
+
+        items.forEach(item => {
+            item.addEventListener('click', function() {
+                const tpl = document.getElementById(`template-${this.id}`);
+                if (!tpl) {
+                    slot.innerHTML = `<p style="font-family:var(--serif-display); font-style:italic; color:var(--ink-mute);">No entry yet for &ldquo;${this.textContent}&rdquo;.</p>`;
+                } else {
+                    slot.innerHTML = '';
+                    slot.appendChild(document.importNode(tpl.content, true));
+                }
+
+                items.forEach(i => i.classList.remove('is-active'));
+                this.classList.add('is-active');
+
+                slot.classList.remove('is-entering');
+                void slot.offsetWidth;
+                slot.classList.add('is-entering');
+            });
         });
-    });
-</script>
+    </script>
+</body>
 </html>
