@@ -112,3 +112,12 @@ pub fn fence_preserves_internal_blank_line_test() {
   md.to_html("```\na\n\nb\n```")
   |> should.equal("<pre><code>a\n\nb</code></pre>")
 }
+
+pub fn blockquote_test() {
+  md.to_html("> quoted")
+  |> should.equal("<blockquote><p>quoted</p></blockquote>")
+}
+
+pub fn hr_test() {
+  md.to_html("---") |> should.equal("<hr>")
+}

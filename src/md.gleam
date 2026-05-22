@@ -52,13 +52,19 @@ fn flush(current: List(String), out: List(String)) -> List(String) {
 }
 
 fn render_block(lines: List(String)) -> String {
-  case classify_block(lines) {
-    Unordered(items) -> render_list("ul", items)
-    Ordered(items) -> render_list("ol", items)
-    Paragraph ->
-      case lines {
-        [single] -> render_single_or_heading(single)
-        _ -> "<p>" <> apply_inline(escape(string.join(lines, " "))) <> "</p>"
+  case lines {
+    ["---"] -> "<hr>"
+    _ ->
+      case classify_block(lines) {
+        Unordered(items) -> render_list("ul", items)
+        Ordered(items) -> render_list("ol", items)
+        Blockquote(inner) -> render_blockquote(inner)
+        Paragraph ->
+          case lines {
+            [single] -> render_single_or_heading(single)
+            _ ->
+              "<p>" <> apply_inline(escape(string.join(lines, " "))) <> "</p>"
+          }
       }
   }
 }
@@ -66,6 +72,7 @@ fn render_block(lines: List(String)) -> String {
 type BlockKind {
   Unordered(List(String))
   Ordered(List(String))
+  Blockquote(List(String))
   Paragraph
 }
 
@@ -75,9 +82,29 @@ fn classify_block(lines: List(String)) -> BlockKind {
     False ->
       case list.all(lines, is_ol_line) {
         True -> Ordered(list.map(lines, strip_ol_marker))
-        False -> Paragraph
+        False ->
+          case list.all(lines, is_bq_line) {
+            True -> Blockquote(list.map(lines, strip_bq_marker))
+            False -> Paragraph
+          }
       }
   }
+}
+
+fn is_bq_line(line: String) -> Bool {
+  string.starts_with(line, "> ") || line == ">"
+}
+
+fn strip_bq_marker(line: String) -> String {
+  case line == ">" {
+    True -> ""
+    False -> string.drop_left(line, 2)
+  }
+}
+
+fn render_blockquote(lines: List(String)) -> String {
+  let inner = to_html(string.join(lines, "\n"))
+  "<blockquote>" <> inner <> "</blockquote>"
 }
 
 fn is_ul_line(line: String) -> Bool {
