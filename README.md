@@ -25,8 +25,6 @@ Anything under `src/assets/static/` is served at `/static/<name>` with MIME infe
 ## Run
 
     docker compose up blogging
-    # or, on a host with gleam + erlang installed:
-    ./start_server.sh
     # http://localhost:3000
 
 ## Test
