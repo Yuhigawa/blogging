@@ -13,6 +13,7 @@ pub fn serve(path: String) -> Response(BytesBuilder) {
         Ok(body) ->
           response.new(200)
           |> response.prepend_header("content-type", mime_for(path))
+          |> response.prepend_header("cache-control", "no-cache, must-revalidate")
           |> response.set_body(bytes_builder.from_string(body))
         Error(_) -> not_found()
       }
