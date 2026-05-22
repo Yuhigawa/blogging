@@ -164,6 +164,18 @@ pub fn fetch_all_collision_first_wins_test() {
   p.body |> should.equal("WIN")
 }
 
+pub fn fetch_all_returns_parse_error_on_garbage_json_test() {
+  let client =
+    gist.HttpClient(
+      list_gists: fn(_) { Ok("not json at all { nope") },
+      fetch_raw: fn(_) { Ok("unused") },
+    )
+  case gist.fetch_all(client, "Yuhigawa") {
+    Error(gist.ParseError(_)) -> should.be_true(True)
+    other -> should.equal(other, Error(gist.ParseError("expected")))
+  }
+}
+
 pub fn build_raw_url_test() {
   gist.build_raw_url_for_test("Yuhigawa", "abc123", "blog:estudos:html.md")
   |> should.equal(
