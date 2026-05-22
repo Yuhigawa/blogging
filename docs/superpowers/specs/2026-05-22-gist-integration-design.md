@@ -84,7 +84,7 @@ What is missing is the wiring: a discovery rule (which gists are posts? which fi
 | `static_serve`, `file_io` | unchanged | static assets and template file load still come from disk. |
 | `scanner` | **deleted** | filesystem post discovery is gone with v1 gist. |
 
-`Post` moves into `gist` (or a tiny `post.gleam` shared by both) as the canonical type. `menu_render` keeps importing from wherever it lives.
+`Post` lives in `gist.gleam` as the canonical type — one module, no indirection. `menu_render` imports `gist.Post`.
 
 ### Data type
 
@@ -155,10 +155,10 @@ Slugify applies to both `group` and `leaf` independently. `blog:Estudos:HTML Int
 
 | Call | Endpoint | Quota |
 |---|---|---|
-| List gists | `GET https://api.github.com/users/<user>/gists?per_page=100` | counts against the **anonymous 60/hr per-IP** GitHub API quota |
+| List gists | `GET https://api.github.com/users/<user>/gists?per_page=100` | counts against the **anonymous 60/hr per-server-IP** GitHub API quota |
 | Fetch body (× N matching files) | `GET https://gist.githubusercontent.com/<user>/<gist_id>/raw/<filename>` | **no quota** — CDN |
 
-With 4 gists and (say) 10 `blog:*` files, a page load costs: 1 quota request + 10 free CDN fetches. At 60 quota-bearing requests/hr per IP, that supports ~60 page loads / hour from one IP before throttling. For a personal blog viewed by humans, this is far above realistic traffic.
+The 60/hr quota is **per server IP, not per visitor**. One Googlebot, one UptimeRobot, and one RSS poller already share that budget with real users. Expected steady-state failure mode under any meaningful crawler load: the banner shows up regularly, not just when GitHub is down. This is acceptable for v1 (the page still works, just empty-menu) and the answer when it actually hurts is caching — explicitly deferred. Documented so the operator knows what they're signing up for.
 
 Pagination: `per_page=100` ceiling. If the user accumulates more than 100 gists, only the first page is read. Documented as a v1 limit. The Link header is ignored for now.
 
@@ -168,11 +168,13 @@ The N raw fetches inside one request run **sequentially**. Easier to reason abou
 
 ### Timeouts
 
-- List call: 5 s.
-- Each raw fetch: 5 s.
-- Any timeout → propagate as `NetworkError("timeout")` → banner.
+- **Per-call timeout** — both list and raw fetches: 5 s total (TCP connect + headers + body, whichever expires first; whatever `gleam_httpc` exposes — wired uniformly).
+- **Whole-request timeout (handler-level cap):** 15 s. The handler wraps `gist.fetch_all` in an Erlang `try`/timer such that if total elapsed time exceeds 15 s, the in-flight fetches are abandoned and the response falls back to the banner. This bounds the worst case at 15 s instead of `5 + N×5 = 55 s`.
+- Any timeout → `NetworkError("timeout")` → banner.
 
-A slow GitHub still degrades to "empty menu + banner" within ~5 s instead of hanging the page. Total worst-case page render is bounded at `5 + N×5 = 55 s` for the 10-post case. We accept this for v1; if real users hit it, the answer is caching (deferred), not parallelism.
+### Observability
+
+Every `GistError` reaches the handler is logged to stderr with the variant and the user being fetched (e.g., `[gist] HttpError(403) for user=Yuhigawa`). Without this, the operator (= the author) cannot distinguish "GitHub is down" from "we've been rate-limited all day". Collision warnings are logged with the same prefix. No structured metrics in v1.
 
 ### The banner
 
@@ -215,7 +217,7 @@ pub fn fetch_all(client: HttpClient, user: String) -> Result(List(Post), GistErr
 
 ### Snapshot tests
 
-The two existing snapshot files (`menu.html`, `index.html`) regenerate against the same `Post` shape — the fixture switches from "files on disk" to "in-memory `[Post(...), Post(...)]`". Existing assertions stand.
+The two existing snapshot files (`menu.html`, `index.html`) regenerate against the same `Post` shape — the fixture switches from "files on disk under `test/fixtures/posts/`" to "in-memory `[Post("estudos", "html", "..."), Post("estudos", "css", "...")]` defined directly in the test module". Existing assertions stand. Old `test/fixtures/posts/` directory is deleted along with `scanner_test.gleam`.
 
 ## Dependencies
 
@@ -263,16 +265,17 @@ The branch is done when, on `feat/gist-integration`:
 
 ## Plan / phasing
 
-Single-branch, sequential. No per-task PRs.
+Single-branch, sequential. No per-task PRs. Each step lands as one commit on `feat/gist-integration`.
 
-1. **Setup:** add `gleam_httpc`, `gleam_json`; introduce `Post` type in `gist` (empty body); make `menu_render` import from `gist`.
-2. **Banner token:** `layout` accepts banner, `validate` knows about the third token, `index.html` includes it. Test the substitution. (Independent of any network code.)
-3. **Filename matcher + slugify shape:** pure function in `gist`, unit tests, no network.
-4. **`HttpClient` capability + fetch_all using a fake client:** all parsing + assembly logic, no real HTTP yet. Integration tests with fake client cover Ok and Error paths.
-5. **Live HTTP client:** `gist.live_client()` wired through `gleam_httpc` + `gleam_json`. Gated live test asserts at least one `Post` comes back from the real Yuhigawa user.
-6. **Wire into `blogging.gleam`:** per-request handler, banner on Error, delete scanner. Gleam test green, format clean, docker boot green.
+1. **Setup:** add `gleam_httpc`, `gleam_json` to `gleam.toml`; introduce `gist.gleam` containing only the `Post` and `GistError` types + an empty `HttpClient` record stub; migrate `menu_render` to `import gist` instead of `import scanner`. **Scanner stays in place**, so existing tests stay green.
+2. **Banner token:** `layout` accepts a third `banner` parameter; `validate` requires `<!-- {{banner}} -->` exactly once; `index.html` gains the token inside the sidebar (below the menu group list). Pure-substitution test + layout unit tests updated. No network.
+3. **Filename matcher:** private `parse_filename` in `gist`, unit tests covering all positive and negative cases in Section 4.
+4. **`HttpClient` capability + `fetch_all` using a fake client:** the full assembly logic (list response → filter → fetch each → assemble `List(Post)` → sort → dedupe with warning log). Integration tests with a fake client cover Ok, partial-failure (one raw fetch errors, the rest succeed → those succeed and the failure is logged), and total-failure paths. No live HTTP yet.
+5. **Live HTTP client:** `gist.live_client()` wired through `gleam_httpc` + `gleam_json` (uniform 5 s per-call timeout). Gated live test (`BLOG_LIVE_TEST=1`) asserts at least one `Post` comes back for `Yuhigawa`.
+6. **Wire into `blogging.gleam`:** read `BLOG_GIST_USER` at boot; handler does per-request fetch + render with the 15 s whole-handler timeout cap; `Error` path logs to stderr and renders the banner. Scanner still exists at this point — its boot-time call is just no longer made.
+7. **Delete scanner:** remove `src/scanner.gleam`, `test/scanner_test.gleam`, `test/fixtures/posts/`, `src/assets/posts/`. Verify no production code references `scanner` (`grep -r 'scanner' src/`). Update README. Tests green.
 
-Each step lands as one commit on `feat/gist-integration`. No per-task branches, no stacked PRs (per user direction).
+Step 6 is the riskiest single commit but is now strictly additive — scanner is dead code at that point, deletion is its own step. If 6 doesn't boot, revert is a one-commit affair without touching deletions.
 
 ## Hardening Log
 
