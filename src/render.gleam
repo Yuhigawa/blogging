@@ -32,7 +32,10 @@ fn flatten_strings(lines: List(String), line: String) -> List(String) {
   ])
 }
 
-pub fn concatenate_templates(content: String, templates: List(String)) -> String {
+pub fn concatenate_templates(
+  content: String,
+  templates: List(String),
+) -> String {
   let lines = string.split(content, "\n")
   let parsed_templates = list.map(templates, convert_markdown_to_html)
 
