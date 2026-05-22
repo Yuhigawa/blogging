@@ -8,10 +8,10 @@ pub fn end_to_end_snapshot_test() {
   let template =
     "<html><nav><!-- {{menu}} --></nav><banner><!-- {{banner}} --></banner><body><!-- {{templates}} --></body></html>"
   let posts = [
-    gist.Post(group: "estudos", leaf: "css", body: "# css\nbody"),
-    gist.Post(group: "estudos", leaf: "html", body: "# html\nbody"),
-    gist.Post(group: "estudos", leaf: "notes.mdx", body: "# notes.mdx\nbody"),
-    gist.Post(group: "skipme", leaf: "keep", body: "# keep\nbody"),
+    gist.Post(group: "estudos", leaf: "css", body: "# css\n\nbody"),
+    gist.Post(group: "estudos", leaf: "html", body: "# html\n\nbody"),
+    gist.Post(group: "estudos", leaf: "notes.mdx", body: "# notes.mdx\n\nbody"),
+    gist.Post(group: "skipme", leaf: "keep", body: "# keep\n\nbody"),
   ]
   let #(menu, tpls) = menu_render.build(posts)
   let rendered = layout.render(template, menu, tpls, "")
