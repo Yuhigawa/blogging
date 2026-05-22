@@ -27,21 +27,7 @@
             </header>
 
             <nav class="menu">
-                <div class="menu-group">
-                    <div class="group-label"><span class="num">01</span> Estudos</div>
-                    <ul>
-                        <li class="submenu-item" id="html">html</li>
-                        <li class="submenu-item" id="css">css</li>
-                    </ul>
-                </div>
-
-                <div class="menu-group">
-                    <div class="group-label"><span class="num">02</span> Ensaios</div>
-                    <ul>
-                        <li class="submenu-item" id="beam">on the beam</li>
-                        <li class="submenu-item" id="gleam">why gleam</li>
-                    </ul>
-                </div>
+                <!-- {{menu}} -->
             </nav>
 
             <footer class="sidebar-foot">
@@ -72,7 +58,9 @@
 
         items.forEach(item => {
             item.addEventListener('click', function() {
-                const tpl = document.getElementById(`template-${this.id}`);
+                const group = this.dataset.group;
+                const leaf = this.id;
+                const tpl = document.getElementById(`template-${group}-${leaf}`);
                 if (!tpl) {
                     slot.innerHTML = `<p style="font-family:var(--serif-display); font-style:italic; color:var(--ink-mute);">No entry yet for &ldquo;${this.textContent}&rdquo;.</p>`;
                 } else {
@@ -89,5 +77,6 @@
             });
         });
     </script>
+    <!-- {{templates}} -->
 </body>
 </html>
