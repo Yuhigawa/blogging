@@ -37,6 +37,7 @@ html, body {
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     font-feature-settings: "palt" 1;
+    overflow-x: hidden;
 }
 
 /* paper grain — subtle SVG noise */
@@ -558,9 +559,12 @@ body::before {
 
 /* ----- responsive ----- */
 
-/* Tablet + below: stack sidebar above content. Drop sticky positioning. */
+/* Tablet + below: stack sidebar above content. Drop sticky positioning.
+   The minmax(0, 1fr) (not bare 1fr) is load-bearing: it lets the grid
+   item shrink below its content min-size, so a long unbreakable token
+   inside <pre> can't widen the column past the viewport. */
 @media (max-width: 900px) {
-    .container { grid-template-columns: 1fr; }
+    .container { grid-template-columns: minmax(0, 1fr); }
     .sidebar {
         position: static;
         height: auto;
@@ -568,8 +572,9 @@ body::before {
         border-bottom: 1px solid var(--rule);
         padding: 40px 32px;
         gap: 32px;
+        min-width: 0;
     }
-    .content { padding: 56px 32px 80px; }
+    .content { padding: 56px 32px 80px; min-width: 0; }
     .year-mark { display: none; }
 
     /* Bigger tap targets — phones and touch tablets. Padding adds room
