@@ -22,7 +22,7 @@ pub fn main() {
       gist.Post(group: g, leaf: l, body: b)
     })
   let #(menu, tpls) = menu_render.build(scan)
-  let rendered_index = layout.render(template, menu, tpls)
+  let rendered_index = layout.render(template, menu, tpls, "")
   elli.become(fn(req) { handler(rendered_index, req) }, on_port: 3000)
 }
 

@@ -564,3 +564,12 @@ body::before {
     .content { padding: 56px 32px 80px; }
     .year-mark { display: none; }
 }
+
+.error-banner {
+    margin: 12px 0 0;
+    padding: 8px 12px;
+    font-size: 0.85em;
+    color: var(--ink-mute, #888);
+    border-left: 2px solid var(--ink-mute, #888);
+    background: transparent;
+}
