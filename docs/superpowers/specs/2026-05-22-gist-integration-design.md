@@ -170,7 +170,7 @@ The N raw fetches inside one request run **sequentially**. Easier to reason abou
 
 - **Per-call timeout** — both list and raw fetches: 5 s total (TCP connect + headers + body, whichever expires first; whatever `gleam_httpc` exposes — wired uniformly).
 - **Whole-request timeout (handler-level cap):** 15 s. The handler wraps `gist.fetch_all` in an Erlang `try`/timer such that if total elapsed time exceeds 15 s, the in-flight fetches are abandoned and the response falls back to the banner. This bounds the worst case at 15 s instead of `5 + N×5 = 55 s`.
-- Any timeout → `NetworkError("timeout")` → banner.
+- Per-call timeout → `NetworkError("timeout")` (or whichever reason `gleam_httpc` surfaces) → banner. Whole-handler timeout → `NetworkError("handler timeout")` → banner. The two strings are distinguishable in stderr so operators can tell "GitHub stalled one fetch" from "the whole pipeline blew the 15 s budget".
 
 ### Observability
 
@@ -292,3 +292,5 @@ Append lessons here as the implementation proceeds (same convention as `2026-05-
 - **Step 5** — `gleam_httpc` 5.0.0 ships its own typed `HttpError` (variants `InvalidUtf8Response`, `FailedToConnect(ip4, ip6)`, `ResponseTimeout`). The live client collapses all three to `NetworkError("httpc transport error")` — operator-friendly for "is GitHub responding?" but blind to "DNS vs TLS vs timeout". Follow-up worth taking when caching lands: pattern-match the variant into a discriminating string.
 - **Step 5** — `gleam_httpc.send()` defaults to a **30-second** timeout; the spec target is 5 s. The implementer initially used `send()` and only switched to the `configure() \|> timeout(5000) \|> dispatch()` path after a one-shot fix-it agent. Takeaway: when the plan says "5 s", grep for the actual timeout value in the diff before declaring DONE — library defaults sneak through.
 - **Step 5** — Plan had an internal inconsistency on the live-test assertion (`>= 1` in prose, `>= 0` in the code snippet). Implementer followed the snippet. Tautology aside, asserting `fetch_all` returns `Ok(_)` is the meaningful gate; the exact post count is brittle (Yuhigawa may have zero blog gists transiently). Keep `>= 0`, prefer the Ok-arm as the contract.
+- **Step 6** — Spec said handler-timeout maps to `NetworkError("timeout")`; implementer used `NetworkError("handler timeout")` to disambiguate from per-call timeouts in stderr. Spec text updated to keep both strings distinguishable. Takeaway: when one log shape covers two failure modes, picking a discriminating reason string is cheaper than wiring a richer type.
+- **Step 6** — Smoke test of `docker compose up + curl localhost:3000/` returned 200 with 3 `<li class="submenu-item">` entries — live GitHub fetch worked on first boot. Boot panic for missing `BLOG_GIST_USER` also verified manually. The "unlinked child + per-request subject + 15 s receive" pattern from `gleam_erlang/process` slotted in without surprises.
