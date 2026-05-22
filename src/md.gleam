@@ -87,6 +87,7 @@ fn apply_inline(text: String) -> String {
   text
   |> protect_escapes
   |> tokenize_code_spans
+  |> apply_links
   |> resolve_emphasis
   |> restore_escapes
 }
@@ -121,6 +122,34 @@ fn tokenize_code_spans(s: String) -> String {
           <> tokenize_code_spans(after)
       }
   }
+}
+
+fn apply_links(s: String) -> String {
+  case string.split_once(s, "[") {
+    Error(_) -> s
+    Ok(#(before, rest)) ->
+      case string.split_once(rest, "](") {
+        Error(_) -> before <> "[" <> apply_links(rest)
+        Ok(#(text, after)) ->
+          case string.split_once(after, ")") {
+            Error(_) -> before <> "[" <> text <> "](" <> apply_links(after)
+            Ok(#(href, tail)) ->
+              before
+              <> "<a href=\""
+              <> escape_attr(href)
+              <> "\">"
+              <> text
+              <> "</a>"
+              <> apply_links(tail)
+          }
+      }
+  }
+}
+
+fn escape_attr(s: String) -> String {
+  s
+  |> string.replace("\"", "&quot;")
+  |> string.replace("'", "&#39;")
 }
 
 fn resolve_emphasis(s: String) -> String {
